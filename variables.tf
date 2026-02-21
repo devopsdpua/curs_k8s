@@ -88,3 +88,22 @@ variable "jumpbox_ssh_source_prefix" {
   default     = "0.0.0.0/0"
   description = "CIDR, с которого разрешён SSH на jumpbox (0.0.0.0/0 = отовсюду; для безопасности укажите свой IP, например x.x.x.x/32)"
 }
+
+# --- Gateway API (Envoy Gateway + манифесты) ---
+variable "kube_config_path" {
+  type        = string
+  default     = ""
+  description = "Путь к kubeconfig для Helm/Kubernetes провайдеров. Пусто = использовать значение по умолчанию (~/.kube/config или KUBECONFIG). Задайте при запуске Terraform не с jumpbox."
+}
+
+variable "envoy_gateway_helm_version" {
+  type        = string
+  default     = "1.7.0"
+  description = "Версия Helm-чарта Envoy Gateway (OCI: oci://docker.io/envoyproxy/gateway-helm)."
+}
+
+variable "manage_gateway_api" {
+  type        = bool
+  default     = true
+  description = "Управлять ли из Terraform установкой Envoy Gateway и манифестами Gateway API (GatewayClass, Gateway, HTTPRoute). При false ресурсы Helm/K8s не создаются (удобно при запуске без доступа к кластеру)."
+}

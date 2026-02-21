@@ -6,6 +6,14 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
   }
 }
 
@@ -14,5 +22,13 @@ provider "azurerm" {
   features {}
 }
 
-# Kubernetes/Helm не используются в Terraform (private cluster доступен только из VNet).
-# Управление кластером (Argo CD, манифесты) — с jumpbox или через Фазу 2 (GitOps).
+# Подключение к кластеру: с jumpbox после az aks get-credentials или задайте var.kube_config_path.
+provider "kubernetes" {
+  config_path = var.kube_config_path != "" ? var.kube_config_path : null
+}
+
+provider "helm" {
+  kubernetes {
+    config_path = var.kube_config_path != "" ? var.kube_config_path : null
+  }
+}
