@@ -105,5 +105,5 @@ variable "envoy_gateway_helm_version" {
 variable "manage_gateway_api" {
   type        = bool
   default     = true
-  description = "Управлять ли из Terraform установкой Envoy Gateway и манифестами Gateway API (GatewayClass, Gateway, HTTPRoute). При false ресурсы Helm/K8s не создаются (удобно при запуске без доступа к кластеру)."
+  description = "При true Terraform создаёт манифесты Gateway API (GatewayClass, Gateway, HTTPRoute). Envoy Gateway (Helm) устанавливается всегда при apply; при false не создаются только эти три манифеста. depends_on требует статический список, поэтому Helm не делаем условным."
 }

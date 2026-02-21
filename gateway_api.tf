@@ -16,19 +16,19 @@ resource "kubernetes_manifest" "gateway_class" {
   count = var.manage_gateway_api ? 1 : 0
 
   manifest   = local.gateway_class_manifest
-  depends_on = var.manage_gateway_api ? [helm_release.eg[0]] : []
+  depends_on = [helm_release.eg]
 }
 
 resource "kubernetes_manifest" "gateway" {
   count = var.manage_gateway_api ? 1 : 0
 
   manifest   = local.gateway_manifest
-  depends_on = var.manage_gateway_api ? [helm_release.eg[0]] : []
+  depends_on = [helm_release.eg]
 }
 
 resource "kubernetes_manifest" "argocd_httproute" {
   count = var.manage_gateway_api ? 1 : 0
 
   manifest   = local.argocd_httproute_manifest
-  depends_on = var.manage_gateway_api ? [helm_release.eg[0]] : []
+  depends_on = [helm_release.eg]
 }
