@@ -1,0 +1,113 @@
+<mxfile host="app.diagrams.net" modified="2026-02-21T00:00:00.000Z" agent="Terraform" version="22.1.0" etag="curs-k8s" type="device">
+  <diagram name="Architecture" id="arch">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="internet" value="Internet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="100" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="user" value="Operator" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="100" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="mgmtVnet" value="Management VNet&#xa;192.168.0.0/16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="280" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="bastionSubnet" value="AzureBastionSubnet&#xa;192.168.2.0/26" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="220" y="50" width="120" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="bastion" value="Bastion&#xa;(bastion-study)&#xa;PIP в aks_rg" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="350" y="50" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="jumpboxSubnet" value="snet-jumpbox&#xa;192.168.1.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="220" y="130" width="120" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="jumpbox" value="vm-jumpbox&#xa;192.168.1.4&#xa;Ubuntu&#xa;az / kubectl / helm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="350" y="130" width="110" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="nsg" value="NSG: SSH 22&#xa;только из&#xa;Bastion subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="220" y="210" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="aksVnet" value="AKS VNet&#xa;10.0.0.0/8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="20" width="280" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="aksSubnet" value="snet-aks-nodes&#xa;10.240.0.0/16" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="540" y="50" width="120" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="aks" value="AKS (aks-study-cluster)&#xa;private cluster&#xa;User Assigned Identity&#xa;Azure CNI Overlay + Cilium&#xa;Key Vault Secrets Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="540" y="120" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="nodeRG" value="MC_* node resource group&#xa;pip-envoy-gateway&#xa;20.86.113.181" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="540" y="220" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="shared" value="Shared (aks_rg / kv_rg)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="20" width="280" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="privateDNS" value="Private DNS Zone&#xa;privatelink.westeurope.azmk8s.io" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="860" y="50" width="240" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="linkAks" value="link → AKS VNet" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="105" width="120" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="linkMgmt" value="link → Mgmt VNet" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="125" width="120" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="identityAKS" value="User Assigned Identity&#xa;id-aks-cluster&#xa;→ Private DNS Zone Contributor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="860" y="160" width="200" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="kv" value="Key Vault&#xa;kv-curs-k8s&#xa;(rg-learning-kv)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="860" y="230" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="identityCSI" value="User Assigned Identity&#xa;id-aks-kv-csi&#xa;→ KV Secrets User&#xa;+ Federated Credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="230" width="90" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" value="Connect → Bastion" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="user" target="bastion">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" value="RDP/SSH" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="bastion" target="jumpbox">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="az aks get-credentials&#xa;kubectl / helm" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="jumpbox" target="aks">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="Peering&#xa;(both ways)" style="endArrow=classic;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="mgmtVnet" target="aksVnet">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="500" y="150"/>
+              <mxPoint x="510" y="120"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="resolve API FQDN" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="aks" target="privateDNS">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="resolve API FQDN" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="jumpbox" target="privateDNS">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="165"/>
+              <mxPoint x="820" y="75"/>
+              <mxPoint x="860" y="75"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="CSI + Workload Identity" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="aks" target="identityCSI">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="160"/>
+              <mxPoint x="1055" y="265"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="identityCSI" target="kv">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="identityAKS" target="privateDNS">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" value="управляет" style="endArrow=classic;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="aks" target="nodeRG">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

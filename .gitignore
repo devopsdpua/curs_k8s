@@ -1,0 +1,27 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*.tfvars
+*.auto.tfvars
+
+# Секреты и ключи
+.env
+.env.*
+*.pem
+*.key
+*.crt
+secrets/
+*.secret.*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo

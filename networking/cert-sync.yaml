@@ -1,0 +1,31 @@
+# Deployment — монтирует SecretProviderClass, чтобы CSI Driver создал и обновлял K8s Secret "wildcard-tls".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-sync
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-sync
+  template:
+    metadata:
+      labels:
+        app: cert-sync
+        azure.workload.identity/client-id: "74345a2c-b7df-444f-a3a9-f41c6f7f8052"
+    spec:
+      containers:
+        - name: cert-sync
+          image: registry.k8s.io/pause:3.9
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /mnt/tls
+              readOnly: true
+      volumes:
+        - name: tls-secret
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: wildcard-tls
