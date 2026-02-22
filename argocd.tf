@@ -6,4 +6,10 @@ resource "helm_release" "argocd" {
   version          = var.argocd_helm_version
   namespace        = "argocd"
   create_namespace = true
+
+  # Accept HTTP when TLS is terminated at the gateway (required for HTTPRoute backend on port 80)
+  set {
+    name  = "configs.params.server\\.insecure"
+    value = "true"
+  }
 }

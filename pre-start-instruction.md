@@ -138,3 +138,48 @@ You can skip this if CRDs were already installed.
 | Optional | HTTP→HTTPS redirect, DNS to gateway_public_ip (e.g. `argocd.bkgdsvc.com`) |
 
 After that the cluster is ready: Envoy Gateway serves HTTPS for `*.bkgdsvc.com` with TLS from Key Vault. Argo CD is installed by Terraform in namespace `argocd`.
+
+---
+
+## If http://argocd.bkgdsvc.com does not open
+
+1. **DNS** — `argocd.bkgdsvc.com` must resolve to the gateway public IP:
+   ```bash
+   terraform output -raw gateway_public_ip   # e.g. 20.224.253.127
+   ```
+   Create an **A record** for `argocd.bkgdsvc.com` (or `*.bkgdsvc.com`) pointing to that IP. Check: `nslookup argocd.bkgdsvc.com` or `dig argocd.bkgdsvc.com`.
+
+2. **Gateway API CRDs** — Without them, Gateway and HTTPRoute have no effect. On the jumpbox:
+   ```bash
+   kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+   ```
+
+3. **Check gateway and route** (on jumpbox):
+   ```bash
+   kubectl get gateway -A
+   kubectl get httproute -A
+   kubectl get svc -n envoy-gateway-system   # Envoy LB should get the gateway public IP
+   kubectl get svc -n argocd                 # argocd-server should exist
+   ```
+
+4. **Test without DNS** — From the jumpbox, if DNS is not set yet:
+   ```bash
+   curl -v -H "Host: argocd.bkgdsvc.com" http://$(terraform output -raw gateway_public_ip)/
+   ```
+   If this works but the browser does not, the issue is DNS on your machine.
+
+5. **If curl returns 500 Internal Server Error** — Traffic reaches Envoy but the gateway cannot use the backend. Ensure a **ReferenceGrant** exists so that the HTTPRoute (in `default`) can reference the Argo CD service (in `argocd`). Terraform applies `networking/routes/argocd-reference-grant.yaml` when both Gateway API and Argo CD are managed. If you applied routes manually, run:  
+   `kubectl apply -f networking/routes/argocd-reference-grant.yaml`  
+   Then retry `curl -v -H "Host: argocd.bkgdsvc.com" http://<gateway-ip>/` and check Envoy logs:  
+   `kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=default-gateway -c envoy --tail=50`.
+
+6. **If curl hangs (e.g. "Trying 20.x.x.x:80..." with no response)** — TCP never reaches the gateway. Check:
+   - **Try the other EXTERNAL-IP** from `kubectl get svc -n envoy-gateway-system` (e.g. `52.149.x.x`):
+     ```bash
+     curl -v -H "Host: argocd.bkgdsvc.com" http://52.149.111.244/
+     ```
+     If this works, the static IP may not be bound correctly to the Load Balancer.
+   - **Azure Load Balancer health** — In Azure Portal: go to the **node resource group** (e.g. `MC_rg-learning-aks_aks-study-cluster_westeurope`), open the **Load Balancer** (name often contains `kubernetes`). Check **Backend pools**: are backends **Healthy**? Check **Health probes**: if the probe fails, the LB will not forward traffic and `curl` will hang. Fix or align the probe with the Envoy listener.
+   - **NSG** — The node subnet may have an NSG that blocks inbound from the internet. In the same node resource group, open the **Network security group** linked to the AKS subnet and add an **Inbound** rule: Allow TCP, source `0.0.0.0/0` or `Internet`, destination port range `30000-32767` (NodePort range), priority e.g. `4000`. Then retry `curl` to the gateway public IP.
+
+7. **HTTPS** — For `https://argocd.bkgdsvc.com` you need the wildcard cert in Key Vault (`k8s-bkgdsvc-cert`) and the cert-sync pod (section 5). Until then, use **http://** (or the curl test above).
