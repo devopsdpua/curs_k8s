@@ -10,7 +10,7 @@ override.tf.json
 *.tfvars
 *.auto.tfvars
 
-# Секреты и ключи
+# Secrets and keys
 .env
 .env.*
 *.pem

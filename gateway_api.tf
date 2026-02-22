@@ -1,13 +1,13 @@
 locals {
-  gateway_class_manifest = yamldecode(file("${path.module}/networking/gateway-class.yaml"))
-  gateway_file           = yamldecode(file("${path.module}/networking/gateway.yaml"))
+  gateway_class_manifest = yamldecode(file("${path.module}/networking/gateway-api/gateway-class.yaml"))
+  gateway_file           = yamldecode(file("${path.module}/networking/gateway-api/gateway.yaml"))
   gateway_manifest = merge(local.gateway_file, {
     spec = merge(local.gateway_file.spec, {
       addresses = [{ type = "IPAddress", value = azurerm_public_ip.gateway.ip_address }]
     })
   })
-  argocd_httproute_manifest  = yamldecode(file("${path.module}/networking/argocd-httproute.yaml"))
-  grafana_httproute_manifest = yamldecode(file("${path.module}/networking/grafana-httproute.yaml"))
+  argocd_httproute_manifest  = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
+  grafana_httproute_manifest = yamldecode(file("${path.module}/networking/routes/grafana-httproute.yaml"))
 }
 
 resource "kubernetes_manifest" "gateway_class" {
