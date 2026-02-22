@@ -1,4 +1,3 @@
-# GatewayClass — регистрирует Envoy Gateway как контроллер
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:

@@ -1,4 +1,3 @@
-# HTTPRoute — редирект HTTP (порт 80) на HTTPS (301)
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

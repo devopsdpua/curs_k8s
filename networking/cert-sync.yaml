@@ -1,6 +1,3 @@
-# Deployment — монтирует SecretProviderClass, чтобы CSI Driver создал и обновлял K8s Secret "wildcard-tls".
-# ОБЯЗАТЕЛЬНО: замените KV_CSI_CLIENT_ID на тот же clientID, что в secret-provider-class.yaml
-# (terraform output -raw kv_csi_client_id). Иначе монтирование тома упадёт с AADSTS700016.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

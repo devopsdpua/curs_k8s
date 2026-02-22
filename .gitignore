@@ -18,6 +18,7 @@ override.tf.json
 *.crt
 secrets/
 *.secret.*
+config/
 
 # IDE / OS
 .idea/

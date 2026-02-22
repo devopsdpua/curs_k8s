@@ -22,7 +22,6 @@ provider "azurerm" {
   features {}
 }
 
-# Подключение к кластеру: с jumpbox после az aks get-credentials или задайте var.kube_config_path.
 provider "kubernetes" {
   config_path = var.kube_config_path != "" ? var.kube_config_path : null
 }

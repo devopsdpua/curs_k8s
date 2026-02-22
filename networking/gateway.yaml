@@ -1,5 +1,3 @@
-# Gateway — HTTP + HTTPS (TLS из Key Vault через Secret wildcard-tls)
-# hostname задайте под свой wildcard-домен (например *.yourdomain.com)
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -14,7 +12,7 @@ spec:
     - name: https
       port: 443
       protocol: HTTPS
-      hostname: "*.bkgdsvc.com"   # заменить на свой wildcard-домен
+      hostname: "*.bkgdsvc.com"
       tls:
         mode: Terminate
         certificateRefs:
@@ -26,7 +24,7 @@ spec:
     - name: http
       port: 80
       protocol: HTTP
-      hostname: "*.bkgdsvc.com"   # заменить на свой wildcard-домен
+      hostname: "*.bkgdsvc.com"
       allowedRoutes:
         namespaces:
           from: All
