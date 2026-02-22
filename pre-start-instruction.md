@@ -73,7 +73,13 @@ On the jumpbox create `terraform.tfvars` (not in the repo):
    terraform init
    terraform apply -var-file=terraform.tfvars
    ```
-   This creates: Envoy Gateway Helm release, GatewayClass, Gateway, HTTPRoutes for ArgoCD and Grafana. Terraform may also update AKS/jumpbox state — that is normal.
+   This creates: Envoy Gateway Helm release, Argo CD (in namespace `argocd`), GatewayClass, Gateway, HTTPRoute for Argo CD. Terraform may also update AKS/jumpbox state — that is normal.
+
+5. Argo CD is installed in namespace `argocd`. To get the initial admin password:
+   ```bash
+   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+   ```
+   Log in at `https://argocd.bkgdsvc.com` (after DNS and TLS are set up; see sections 5–6). Username is `admin`.
 
 ---
 
@@ -128,6 +134,7 @@ You can skip this if CRDs were already installed.
 | Jumpbox | `az login`, `az aks get-credentials`, `terraform init` + `apply` |
 | Jumpbox | `kubectl apply` Gateway API CRDs (standard-install.yaml) |
 | Jumpbox | Secret in KV `k8s-bkgdsvc-cert`, set tenantID/clientID in SecretProviderClass and cert-sync → apply + delete cert-sync pod |
-| Optional | HTTP→HTTPS redirect, DNS to gateway_public_ip |
+| Jumpbox | Argo CD: get admin password from secret `argocd-initial-admin-secret` in namespace `argocd` |
+| Optional | HTTP→HTTPS redirect, DNS to gateway_public_ip (e.g. `argocd.bkgdsvc.com`) |
 
-After that the cluster is ready: Envoy Gateway serves HTTPS for `*.bkgdsvc.com` with TLS from Key Vault. ArgoCD and Grafana are not installed by this repo — routes for them exist; install the backends separately.
+After that the cluster is ready: Envoy Gateway serves HTTPS for `*.bkgdsvc.com` with TLS from Key Vault. Argo CD is installed by Terraform in namespace `argocd`.

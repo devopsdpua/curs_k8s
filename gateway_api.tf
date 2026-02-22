@@ -6,8 +6,7 @@ locals {
       addresses = [{ type = "IPAddress", value = azurerm_public_ip.gateway.ip_address }]
     })
   })
-  argocd_httproute_manifest  = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
-  grafana_httproute_manifest = yamldecode(file("${path.module}/networking/routes/grafana-httproute.yaml"))
+  argocd_httproute_manifest = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
 }
 
 resource "kubernetes_manifest" "gateway_class" {
@@ -25,11 +24,5 @@ resource "kubernetes_manifest" "gateway" {
 resource "kubernetes_manifest" "argocd_httproute" {
   count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
   manifest   = local.argocd_httproute_manifest
-  depends_on = [helm_release.eg]
-}
-
-resource "kubernetes_manifest" "grafana_httproute" {
-  count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
-  manifest   = local.grafana_httproute_manifest
   depends_on = [helm_release.eg]
 }

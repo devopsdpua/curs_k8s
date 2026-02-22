@@ -94,3 +94,13 @@ variable "manage_gateway_api" {
   type    = bool
   default = true
 }
+
+variable "argocd_helm_version" {
+  type    = string
+  default = "7.7.0"
+}
+
+variable "manage_argocd" {
+  type    = bool
+  default = true
+}
