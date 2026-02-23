@@ -10,10 +10,9 @@ locals {
       addresses = [{ type = "IPAddress", value = azurerm_public_ip.gateway.ip_address }]
       infrastructure = {
         parametersRef = {
-          group     = "gateway.envoyproxy.io"
-          kind      = "EnvoyProxy"
-          name      = "envoy-proxy-azure-pip"
-          namespace = "default"
+          group = "gateway.envoyproxy.io"
+          kind  = "EnvoyProxy"
+          name  = "envoy-proxy-azure-pip"
         }
       }
     })
