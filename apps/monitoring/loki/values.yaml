@@ -1,0 +1,76 @@
+loki:
+  fullnameOverride: loki
+
+  deploymentMode: SingleBinary
+
+  loki:
+    commonConfig:
+      replication_factor: 1
+
+    auth_enabled: false
+
+    storage:
+      type: azure
+      azure:
+        # account_name and container_name are injected by Terraform via
+        # ArgoCD Application helm.values at deploy time.
+        accountName: "INJECTED_BY_TERRAFORM"
+        containerName: loki-data
+        useFederatedToken: true
+      bucketNames:
+        chunks: loki-data
+        ruler: loki-data
+        admin: loki-data
+
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: azure
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+
+  # Single binary — one pod does everything.
+  singleBinary:
+    replicas: 1
+    persistence:
+      size: 5Gi
+
+  # Workload Identity label injected by Terraform; defined here as fallback.
+  podLabels:
+    "azure.workload.identity/use": "true"
+
+  # Disable components not needed in singleBinary mode.
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  backend:
+    replicas: 0
+
+  # Disable bundled MinIO — we use Azure Blob Storage.
+  minio:
+    enabled: false
+
+  # Disable self-monitoring and test pods to save resources.
+  monitoring:
+    selfMonitoring:
+      enabled: false
+      grafanaAgent:
+        installOperator: false
+    lokiCanary:
+      enabled: false
+
+  test:
+    enabled: false
+
+  gateway:
+    enabled: true
+    replicas: 1
+
+  # ServiceAccount with Workload Identity annotation (injected by Terraform).
+  serviceAccount:
+    create: true
+    annotations: {}

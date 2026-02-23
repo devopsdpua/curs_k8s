@@ -1,0 +1,8 @@
+apiVersion: v2
+name: loki
+description: Umbrella chart for Grafana Loki (singleBinary mode with Azure Blob Storage)
+version: 0.1.0
+dependencies:
+  - name: loki
+    version: "6.53.0"
+    repository: https://grafana.github.io/helm-charts

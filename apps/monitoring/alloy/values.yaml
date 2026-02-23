@@ -3,8 +3,26 @@ alloy:
 
   controller:
     type: daemonset
+    # Mount host log directory so Alloy can read pod logs from nodes.
+    volumes:
+      extra:
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
 
   alloy:
+    mounts:
+      extra:
+        - name: varlogpods
+          mountPath: /var/log/pods
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+
     configMap:
       content: |
         // ---------------------------------------------------------------
@@ -197,5 +215,60 @@ alloy:
         prometheus.remote_write "mimir" {
           endpoint {
             url = "http://mimir-gateway.mimir.svc.cluster.local:80/api/v1/push"
+          }
+        }
+
+        // ---------------------------------------------------------------
+        // Log collection — all pod logs via Kubernetes API
+        // ---------------------------------------------------------------
+        discovery.kubernetes "pods_logs" {
+          role = "pod"
+        }
+
+        discovery.relabel "pod_logs" {
+          targets = discovery.kubernetes.pods_logs.targets
+
+          // Keep only running pods
+          rule {
+            source_labels = ["__meta_kubernetes_pod_phase"]
+            regex         = "Pending|Succeeded|Failed|Unknown"
+            action        = "drop"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app"]
+            target_label  = "app"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+            separator     = "/"
+            target_label  = "__path__"
+            replacement   = "/var/log/pods/*$1/*.log"
+          }
+        }
+
+        local.file_match "pod_logs" {
+          path_targets = discovery.relabel.pod_logs.output
+        }
+
+        loki.source.file "pod_logs" {
+          targets    = local.file_match.pod_logs.targets
+          forward_to = [loki.write.loki.receiver]
+        }
+
+        loki.write "loki" {
+          endpoint {
+            url = "http://loki-gateway.monitoring.svc.cluster.local:80/loki/api/v1/push"
           }
         }

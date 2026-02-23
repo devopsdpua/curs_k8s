@@ -11,7 +11,7 @@ grafana:
       root_url: "https://grafana.bkgdsvc.com"
       serve_from_sub_path: false
 
-  # Provision Mimir as the default Prometheus-compatible datasource.
+  # Provision Mimir (metrics) and Loki (logs) as datasources.
   datasources:
     datasources.yaml:
       apiVersion: 1
@@ -21,6 +21,12 @@ grafana:
           url: http://mimir-gateway.mimir.svc.cluster.local:80/prometheus
           access: proxy
           isDefault: true
+          editable: true
+        - name: Loki
+          type: loki
+          url: http://loki-gateway.monitoring.svc.cluster.local:80
+          access: proxy
+          isDefault: false
           editable: true
 
   # Pre-loaded dashboard provider that picks up ConfigMaps with a specific label.
