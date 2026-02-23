@@ -107,13 +107,18 @@ variable "manage_argocd" {
 
 variable "manage_monitoring" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "mimir_storage_account_name" {
   type        = string
-  description = "Globally unique name for the Azure Storage Account used by Mimir."
+  description = "Globally unique name for the Azure Storage Account used by Mimir (3-24 lowercase letters/numbers). Required when manage_monitoring = true."
   default     = ""
+
+  validation {
+    condition     = var.mimir_storage_account_name == "" || (length(var.mimir_storage_account_name) >= 3 && length(var.mimir_storage_account_name) <= 24 && can(regex("^[a-z0-9]+$", var.mimir_storage_account_name)))
+    error_message = "mimir_storage_account_name must be 3-24 lowercase letters/numbers."
+  }
 }
 
 variable "git_repo_url" {
