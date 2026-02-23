@@ -168,9 +168,13 @@ After that the cluster is ready: Envoy Gateway serves HTTPS for `*.bkgdsvc.com` 
    ```
    If this works but the browser does not, the issue is DNS on your machine.
 
-5. **If curl returns 500 Internal Server Error** — Traffic reaches Envoy but the gateway cannot use the backend. Ensure a **ReferenceGrant** exists so that the HTTPRoute (in `default`) can reference the Argo CD service (in `argocd`). Terraform applies `networking/routes/argocd-reference-grant.yaml` when both Gateway API and Argo CD are managed. If you applied routes manually, run:  
-   `kubectl apply -f networking/routes/argocd-reference-grant.yaml`  
-   Then retry `curl -v -H "Host: argocd.bkgdsvc.com" http://<gateway-ip>/` and check Envoy logs:  
+5. **If curl returns 500 Internal Server Error** — Traffic reaches Envoy but the gateway cannot use the backend (`response_code_details: direct_response`, `upstream_cluster: null` in Envoy logs). Ensure a **ReferenceGrant** exists and the controller has re-processed the route:
+   - Apply the grant if needed: `kubectl apply -f networking/routes/argocd-reference-grant.yaml`
+   - Verify: `kubectl get referencegrant -n argocd`
+   - Restart the Envoy Gateway controller so it re-resolves the HTTPRoute backend:  
+     `kubectl rollout restart deployment envoy-gateway -n envoy-gateway-system`
+   - Wait ~30s, then retry: `curl -v -H "Host: argocd.bkgdsvc.com" http://<gateway-ip>/`  
+   If it still returns 500, check Envoy logs:  
    `kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=default-gateway -c envoy --tail=50`.
 
 6. **If curl hangs (e.g. "Trying 20.x.x.x:80..." with no response)** — TCP never reaches the gateway. Check:
@@ -182,4 +186,14 @@ After that the cluster is ready: Envoy Gateway serves HTTPS for `*.bkgdsvc.com` 
    - **Azure Load Balancer health** — In Azure Portal: go to the **node resource group** (e.g. `MC_rg-learning-aks_aks-study-cluster_westeurope`), open the **Load Balancer** (name often contains `kubernetes`). Check **Backend pools**: are backends **Healthy**? Check **Health probes**: if the probe fails, the LB will not forward traffic and `curl` will hang. Fix or align the probe with the Envoy listener.
    - **NSG** — The node subnet may have an NSG that blocks inbound from the internet. In the same node resource group, open the **Network security group** linked to the AKS subnet and add an **Inbound** rule: Allow TCP, source `0.0.0.0/0` or `Internet`, destination port range `30000-32767` (NodePort range), priority e.g. `4000`. Then retry `curl` to the gateway public IP.
 
-7. **HTTPS** — For `https://argocd.bkgdsvc.com` you need the wildcard cert in Key Vault (`k8s-bkgdsvc-cert`) and the cert-sync pod (section 5). Until then, use **http://** (or the curl test above).
+7. **Static gateway IP (20.x) not accepting traffic** — If the other EXTERNAL-IP (e.g. `52.149.x.x`) works but `terraform output gateway_public_ip` (20.224.253.127) hangs or times out:
+   - **Diagnosis (Azure Portal):** In the **node resource group** (e.g. `MC_rg-learning-aks_aks-study-cluster_westeurope`), open the **Load Balancer**. Under **Frontend IP configuration**: if **20.224.253.127 is not listed at all**, the static PIP was never attached as a frontend (PIP exists in the node RG but the Service did not use it). If both 52.x and 20.x are listed, check **Load balancing rules** — each frontend needs its own rules; if only 52.x is used, add rules for 20.x (Fix B).
+   - **Fix A1 — Recreate the Service (preferred):** So the controller recreates the Service and Azure uses the static PIP. On the jumpbox:
+     ```bash
+     kubectl delete svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=default-gateway
+     ```
+     Wait 1–2 minutes for the controller to recreate the service. Then: `kubectl get svc -n envoy-gateway-system`. Ideally there is a single EXTERNAL-IP (20.224.253.127). Test: `curl -v -H "Host: argocd.bkgdsvc.com" http://20.224.253.127/`.
+   - **Fix A2 — EnvoyProxy with Azure PIP annotations:** Terraform applies an EnvoyProxy (`envoy-proxy-azure-pip`) linked to the Gateway with annotations so the Envoy Service uses the existing PIP in the node resource group. After `terraform apply`, **recreate the Service (A1)** so the new Service is created with these annotations and the static IP is attached. If the static IP was not in Frontend IP configuration at all, apply Terraform (to create EnvoyProxy and link Gateway to it), then run the A1 delete command; after the controller recreates the Service, check Frontend IP configuration again for 20.224.253.127.
+   - **Fix B — Add rules for the static frontend in Azure:** In the same Load Balancer, create **new** load balancing rules for TCP 80 and TCP 443 that use **Frontend IP** 20.224.253.127 (same backend pool and health probe as the existing rules). No Terraform/Kubernetes changes; repeat or automate if the LB is recreated.
+
+8. **HTTPS** — For `https://argocd.bkgdsvc.com` you need the wildcard cert in Key Vault (`k8s-bkgdsvc-cert`) and the cert-sync pod (section 5). Until then, use **http://** (or the curl test above).
