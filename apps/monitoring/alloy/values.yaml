@@ -1,0 +1,201 @@
+alloy:
+  fullnameOverride: alloy
+
+  controller:
+    type: daemonset
+
+  alloy:
+    configMap:
+      content: |
+        // ---------------------------------------------------------------
+        // Kubernetes node discovery (kubelet, cAdvisor)
+        // ---------------------------------------------------------------
+        discovery.kubernetes "nodes" {
+          role = "node"
+        }
+
+        discovery.relabel "kubelet" {
+          targets = discovery.kubernetes.nodes.targets
+
+          rule {
+            action        = "labelmap"
+            regex         = "__meta_kubernetes_node_label_(.+)"
+          }
+          rule {
+            target_label  = "__address__"
+            replacement   = "kubernetes.default.svc:443"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_node_name"]
+            regex         = "(.+)"
+            target_label  = "__metrics_path__"
+            replacement   = "/api/v1/nodes/${1}/proxy/metrics"
+          }
+        }
+
+        prometheus.scrape "kubelet" {
+          targets         = discovery.relabel.kubelet.output
+          scheme          = "https"
+          scrape_interval = "30s"
+
+          authorization {
+            type             = "Bearer"
+            credentials_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          }
+          tls_config {
+            ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+            insecure_skip_verify = true
+          }
+
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        discovery.relabel "cadvisor" {
+          targets = discovery.kubernetes.nodes.targets
+
+          rule {
+            action        = "labelmap"
+            regex         = "__meta_kubernetes_node_label_(.+)"
+          }
+          rule {
+            target_label  = "__address__"
+            replacement   = "kubernetes.default.svc:443"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_node_name"]
+            regex         = "(.+)"
+            target_label  = "__metrics_path__"
+            replacement   = "/api/v1/nodes/${1}/proxy/metrics/cadvisor"
+          }
+        }
+
+        prometheus.scrape "cadvisor" {
+          targets         = discovery.relabel.cadvisor.output
+          scheme          = "https"
+          scrape_interval = "30s"
+
+          authorization {
+            type             = "Bearer"
+            credentials_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          }
+          tls_config {
+            ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+            insecure_skip_verify = true
+          }
+
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // ---------------------------------------------------------------
+        // Pod discovery — annotation-based scraping
+        //   prometheus.io/scrape: "true"
+        //   prometheus.io/port:   "<port>"
+        //   prometheus.io/path:   "<path>"  (default /metrics)
+        // ---------------------------------------------------------------
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
+        discovery.relabel "pods" {
+          targets = discovery.kubernetes.pods.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+            regex         = "true"
+            action        = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scheme"]
+            target_label  = "__scheme__"
+            regex         = "(https?)"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+            target_label  = "__metrics_path__"
+            regex         = "(.+)"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port", "__meta_kubernetes_pod_ip"]
+            regex         = "(\\d+);(([\\d\\.]+))"
+            target_label  = "__address__"
+            replacement   = "${2}:${1}"
+          }
+          rule {
+            action        = "labelmap"
+            regex         = "__meta_kubernetes_pod_label_(.+)"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+        }
+
+        prometheus.scrape "pods" {
+          targets         = discovery.relabel.pods.output
+          scrape_interval = "30s"
+          forward_to      = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // ---------------------------------------------------------------
+        // Service endpoint discovery
+        // ---------------------------------------------------------------
+        discovery.kubernetes "endpoints" {
+          role = "endpoints"
+        }
+
+        discovery.relabel "endpoints" {
+          targets = discovery.kubernetes.endpoints.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_scrape"]
+            regex         = "true"
+            action        = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_scheme"]
+            target_label  = "__scheme__"
+            regex         = "(https?)"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_path"]
+            target_label  = "__metrics_path__"
+            regex         = "(.+)"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_port", "__address__"]
+            regex         = "(\\d+);([^:]+)(?::\\d+)?"
+            target_label  = "__address__"
+            replacement   = "${2}:${1}"
+          }
+          rule {
+            action        = "labelmap"
+            regex         = "__meta_kubernetes_service_label_(.+)"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_name"]
+            target_label  = "service"
+          }
+        }
+
+        prometheus.scrape "endpoints" {
+          targets         = discovery.relabel.endpoints.output
+          scrape_interval = "30s"
+          forward_to      = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // ---------------------------------------------------------------
+        // Remote write — send all collected metrics to Mimir
+        // ---------------------------------------------------------------
+        prometheus.remote_write "mimir" {
+          endpoint {
+            url = "http://mimir-gateway.mimir.svc.cluster.local:80/api/v1/push"
+          }
+        }

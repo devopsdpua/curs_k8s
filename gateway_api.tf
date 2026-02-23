@@ -1,6 +1,6 @@
 locals {
-  gateway_class_manifest    = yamldecode(file("${path.module}/networking/gateway-api/gateway-class.yaml"))
-  gateway_file              = yamldecode(file("${path.module}/networking/gateway-api/gateway.yaml"))
+  gateway_class_manifest = yamldecode(file("${path.module}/networking/gateway-api/gateway-class.yaml"))
+  gateway_file           = yamldecode(file("${path.module}/networking/gateway-api/gateway.yaml"))
   envoy_proxy_azure_pip_file = templatefile("${path.module}/networking/gateway-api/envoy-proxy-azure-pip.yaml", {
     node_resource_group = azurerm_kubernetes_cluster.aks.node_resource_group
   })
@@ -17,8 +17,10 @@ locals {
       }
     })
   })
-  argocd_httproute_manifest     = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
-  argocd_reference_grant_manifest = yamldecode(file("${path.module}/networking/routes/argocd-reference-grant.yaml"))
+  argocd_httproute_manifest        = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
+  argocd_reference_grant_manifest  = yamldecode(file("${path.module}/networking/routes/argocd-reference-grant.yaml"))
+  grafana_httproute_manifest       = yamldecode(file("${path.module}/networking/routes/grafana-httproute.yaml"))
+  grafana_reference_grant_manifest = yamldecode(file("${path.module}/networking/routes/grafana-reference-grant.yaml"))
 }
 
 resource "kubernetes_manifest" "gateway_class" {
@@ -51,4 +53,17 @@ resource "kubernetes_manifest" "argocd_reference_grant" {
   count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_argocd ? 1 : 0
   manifest   = local.argocd_reference_grant_manifest
   depends_on = [helm_release.argocd]
+}
+
+resource "kubernetes_manifest" "grafana_httproute" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_monitoring ? 1 : 0
+  manifest   = local.grafana_httproute_manifest
+  depends_on = [helm_release.eg]
+}
+
+# Required for HTTPRoute (default ns) to reference Grafana Service in monitoring ns.
+resource "kubernetes_manifest" "grafana_reference_grant" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_monitoring ? 1 : 0
+  manifest   = local.grafana_reference_grant_manifest
+  depends_on = [helm_release.eg, kubernetes_namespace.monitoring]
 }

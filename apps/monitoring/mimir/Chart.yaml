@@ -1,0 +1,8 @@
+apiVersion: v2
+name: mimir
+description: Umbrella chart for Grafana Mimir (microservices mode with Azure Blob Storage)
+version: 0.1.0
+dependencies:
+  - name: mimir-distributed
+    version: "6.0.3"
+    repository: https://grafana.github.io/helm-charts

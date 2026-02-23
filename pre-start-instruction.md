@@ -135,9 +135,90 @@ You can skip this if CRDs were already installed.
 | Jumpbox | `kubectl apply` Gateway API CRDs (standard-install.yaml) |
 | Jumpbox | Secret in KV `k8s-bkgdsvc-cert`, set tenantID/clientID in SecretProviderClass and cert-sync → apply + delete cert-sync pod |
 | Jumpbox | Argo CD: get admin password from secret `argocd-initial-admin-secret` in namespace `argocd` |
-| Optional | HTTP→HTTPS redirect, DNS to gateway_public_ip (e.g. `argocd.bkgdsvc.com`) |
+| Jumpbox | Add git repo to ArgoCD, set `manage_monitoring`, `mimir_storage_account_name`, `git_repo_url` in tfvars → `terraform apply` |
+| Jumpbox | Verify: `kubectl -n argocd get applications` — mimir, alloy, grafana should be Synced/Healthy |
+| Optional | HTTP→HTTPS redirect, DNS to gateway_public_ip (e.g. `argocd.bkgdsvc.com`, `grafana.bkgdsvc.com`) |
 
 After that the cluster is ready: Envoy Gateway serves HTTPS for `*.bkgdsvc.com` with TLS from Key Vault. Argo CD is installed by Terraform in namespace `argocd`.
+
+---
+
+## 7. Monitoring stack (Alloy → Mimir → Grafana)
+
+The monitoring stack is deployed via ArgoCD Applications. Terraform creates the Azure infrastructure (Storage Account, Workload Identity) and the ArgoCD Application CRDs; ArgoCD syncs the Helm charts from this repo.
+
+### Prerequisites
+
+- `manage_monitoring = true` in `terraform.tfvars`
+- `mimir_storage_account_name` set to a globally unique name (e.g. `stmimirstudy42`)
+- `git_repo_url` set to the HTTPS or SSH URL of this repository (ArgoCD must have access)
+
+### What Terraform creates
+
+| Resource | Purpose |
+|----------|---------|
+| Storage Account + Blob container `mimir-data` | Long-term metrics storage for Mimir |
+| Managed Identity `id-aks-mimir` | Workload Identity for Mimir → Blob access |
+| Federated Identity Credential | Links K8s SA `mimir` in ns `mimir` to the Azure identity |
+| Role Assignment `Storage Blob Data Contributor` | Grants Mimir write/read access to the storage account |
+| ArgoCD Applications (mimir, alloy, grafana) | ArgoCD syncs Helm charts from `apps/monitoring/` |
+
+### What ArgoCD deploys
+
+| Application | Namespace | Chart |
+|-------------|-----------|-------|
+| mimir | `mimir` | `grafana/mimir-distributed` — microservices mode, Azure Blob backend |
+| alloy | `alloy` | `grafana/alloy` — DaemonSet, scrapes kubelet/cAdvisor/pods, remote_write to Mimir |
+| grafana | `monitoring` | `grafana/grafana` — standalone, Mimir as Prometheus datasource |
+
+### Steps (on jumpbox, after section 3)
+
+1. Ensure `terraform.tfvars` includes:
+   ```hcl
+   manage_monitoring          = true
+   mimir_storage_account_name = "stmimirstudy42"   # must be globally unique
+   git_repo_url               = "https://github.com/<you>/curs-k8s.git"
+   ```
+
+2. Add the git repo to ArgoCD (if not already added):
+   ```bash
+   kubectl -n argocd exec -it deploy/argocd-server -- argocd repo add https://github.com/<you>/curs-k8s.git --username <user> --password <token>
+   ```
+   Or via the ArgoCD UI: Settings → Repositories → Connect Repo.
+
+3. Run Terraform:
+   ```bash
+   terraform apply -var-file=terraform.tfvars
+   ```
+   This creates the Storage Account, Workload Identity, and ArgoCD Applications.
+
+4. ArgoCD will automatically sync the three applications. Monitor progress:
+   ```bash
+   kubectl -n argocd get applications
+   ```
+
+5. Verify the stack:
+   ```bash
+   kubectl get pods -n mimir          # Mimir components
+   kubectl get pods -n alloy          # Alloy DaemonSet
+   kubectl get pods -n monitoring     # Grafana
+   ```
+
+6. Grafana is accessible at `https://grafana.bkgdsvc.com` (after DNS is set up).
+   Default admin password: check `kubectl -n monitoring get secret grafana -o jsonpath='{.data.admin-password}' | base64 -d`.
+
+### Architecture
+
+```
+Alloy (DaemonSet, ns: alloy)
+  │  scrapes kubelet, cAdvisor, annotated pods
+  │  remote_write
+  ▼
+Mimir Gateway (ns: mimir)  ──►  Distributor → Ingester → Azure Blob Storage
+  ▲                                                        ▲
+  │  PromQL queries                                        │
+Grafana (ns: monitoring)            Compactor, Store-Gateway ─┘
+```
 
 ---
 

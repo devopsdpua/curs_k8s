@@ -36,3 +36,11 @@ output "bastion_host_name" {
   value     = local.create_bastion ? azurerm_bastion_host.main[0].name : null
   sensitive = true
 }
+
+output "mimir_storage_account_name" {
+  value = var.manage_monitoring ? azurerm_storage_account.mimir[0].name : null
+}
+
+output "mimir_identity_client_id" {
+  value = var.manage_monitoring ? azurerm_user_assigned_identity.mimir[0].client_id : null
+}

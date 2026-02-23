@@ -104,3 +104,20 @@ variable "manage_argocd" {
   type    = bool
   default = true
 }
+
+variable "manage_monitoring" {
+  type    = bool
+  default = true
+}
+
+variable "mimir_storage_account_name" {
+  type        = string
+  description = "Globally unique name for the Azure Storage Account used by Mimir."
+  default     = ""
+}
+
+variable "git_repo_url" {
+  type        = string
+  description = "Git repository URL for ArgoCD Applications (SSH or HTTPS)."
+  default     = ""
+}
