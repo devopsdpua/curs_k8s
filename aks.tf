@@ -48,11 +48,12 @@ resource "azurerm_kubernetes_cluster" "aks" {
   private_dns_zone_id                 = azurerm_private_dns_zone.aks_api.id
 
   default_node_pool {
-    name           = "systempool"
-    node_count     = 1
-    vm_size        = "Standard_D2s_v3"
-    vnet_subnet_id = azurerm_subnet.aks_subnet.id
-    os_sku         = "AzureLinux"
+    name                         = "systempool"
+    node_count                   = 1
+    vm_size                      = "Standard_D2s_v3"
+    vnet_subnet_id               = azurerm_subnet.aks_subnet.id
+    os_sku                       = "AzureLinux"
+    only_critical_addons_enabled = true
   }
 
   identity {
@@ -86,6 +87,24 @@ resource "azurerm_kubernetes_cluster" "aks" {
       kubernetes_version,
     ]
   }
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "monitoring" {
+  count                 = var.manage_monitoring ? 1 : 0
+  name                  = "monpool"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
+  vm_size               = var.monitoring_node_vm_size
+  node_count            = var.monitoring_node_count
+  vnet_subnet_id        = azurerm_subnet.aks_subnet.id
+  os_sku                = "AzureLinux"
+
+  node_labels = {
+    "workload" = "monitoring"
+  }
+
+  node_taints = ["workload=monitoring:NoSchedule"]
+
+  tags = local.common_tags
 }
 
 resource "azurerm_role_assignment" "aks_dns_contributor" {

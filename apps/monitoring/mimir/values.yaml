@@ -41,26 +41,68 @@ mimir-distributed:
   # --- Minimal replicas for a learning / dev environment ---
   distributor:
     replicas: 1
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
   ingester:
     replicas: 2
     zoneAwareReplication:
       enabled: false
     persistentVolume:
       size: 5Gi
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
   querier:
     replicas: 1
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
   query_frontend:
     replicas: 1
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
   store_gateway:
     replicas: 1
     zoneAwareReplication:
       enabled: false
     persistentVolume:
       size: 5Gi
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
   compactor:
     replicas: 1
     persistentVolume:
       size: 5Gi
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
   ruler:
     enabled: false
   alertmanager:
@@ -71,6 +113,13 @@ mimir-distributed:
   # Gateway (nginx reverse proxy) — single entry point for writes and reads.
   gateway:
     replicas: 1
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
 
   # Disable rollout-operator (not needed at this scale).
   rollout_operator:

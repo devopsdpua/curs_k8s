@@ -110,6 +110,16 @@ variable "manage_monitoring" {
   default = false
 }
 
+variable "monitoring_node_vm_size" {
+  type    = string
+  default = "Standard_D4s_v3"
+}
+
+variable "monitoring_node_count" {
+  type    = number
+  default = 1
+}
+
 variable "mimir_storage_account_name" {
   type        = string
   description = "Globally unique name for the Azure Storage Account used by Mimir (3-24 lowercase letters/numbers). Required when manage_monitoring = true."

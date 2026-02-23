@@ -3,6 +3,14 @@ alloy:
 
   controller:
     type: daemonset
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
+      - key: CriticalAddonsOnly
+        operator: Exists
+        effect: NoSchedule
     # Mount host log directory so Alloy can read pod logs from nodes.
     volumes:
       extra:
