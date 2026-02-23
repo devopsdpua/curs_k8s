@@ -26,3 +26,6 @@ config/
 .DS_Store
 *.swp
 *.swo
+
+# Helm: downloaded dependency charts (ArgoCD runs helm dependency build on sync)
+apps/monitoring/*/charts/

@@ -1,0 +1,23 @@
+# HTTPRoute for Grafana UI via Gateway API (host: grafana.bkgdsvc.com).
+# Backend: Grafana Service in namespace monitoring (e.g. prometheus-stack-grafana).
+# Requires ReferenceGrant in monitoring ns (grafana-reference-grant.yaml).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: default
+spec:
+  parentRefs:
+    - name: default-gateway
+      namespace: default
+  hostnames:
+    - "grafana.bkgdsvc.com"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: prometheus-stack-grafana
+          namespace: monitoring
+          port: 80

@@ -1,0 +1,35 @@
+# Values for kube-prometheus-stack (Prometheus, Grafana, Alertmanager, node-exporter, kube-state-metrics).
+# Full options: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+
+kube-prometheus-stack:
+  # Predictable names for HTTPRoute backend (e.g. prometheus-stack-grafana)
+  fullnameOverride: "prometheus-stack"
+
+  # Disable built-in Ingress for Grafana — we use Gateway API (grafana.bkgdsvc.com)
+  grafana:
+    ingress:
+      enabled: false
+    # Add Loki as datasource (Prometheus is already configured by default)
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        uid: loki
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        access: proxy
+        isDefault: false
+    # Optional: persistence for Grafana
+    persistence:
+      enabled: true
+      size: 5Gi
+      type: pvc
+
+  # Optional: persistence for Prometheus
+  prometheus:
+    prometheusSpec:
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi

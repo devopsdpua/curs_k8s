@@ -1,0 +1,15 @@
+# Wrapper chart for Loki + Promtail (Grafana Helm charts)
+# ArgoCD will run helm dependency build + helm template from this path.
+apiVersion: v2
+name: loki
+description: Wrapper for Loki and Promtail (Grafana Helm)
+type: application
+version: 0.1.0
+appVersion: "1.0"
+dependencies:
+  - name: loki
+    repository: https://grafana.github.io/helm-charts
+    version: "6.24.0"  # Pin; monolithic mode supported
+  - name: promtail
+    repository: https://grafana.github.io/helm-charts
+    version: "6.2.0"  # Pin; compatible with Loki 6.x
