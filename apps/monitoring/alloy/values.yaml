@@ -6,7 +6,7 @@ alloy:
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
       - key: CriticalAddonsOnly
         operator: Exists

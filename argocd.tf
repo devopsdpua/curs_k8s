@@ -12,4 +12,23 @@ resource "helm_release" "argocd" {
     name  = "configs.params.server\\.insecure"
     value = "true"
   }
+
+  # Schedule Argo CD on the infrastructure node pool
+  values = [
+    yamlencode({
+      global = {
+        nodeSelector = {
+          workload = "infrastructure"
+        }
+        tolerations = [
+          {
+            key      = "workload"
+            operator = "Equal"
+            value    = "infrastructure"
+            effect   = "NoSchedule"
+          }
+        ]
+      }
+    })
+  ]
 }

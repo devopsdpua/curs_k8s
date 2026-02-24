@@ -38,11 +38,11 @@ loki:
     persistence:
       size: 5Gi
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
 
   # Workload Identity label injected by Terraform; defined here as fallback.
@@ -77,11 +77,11 @@ loki:
     enabled: true
     replicas: 1
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
 
   # ServiceAccount with Workload Identity annotation (injected by Terraform).

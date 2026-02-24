@@ -89,20 +89,20 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-resource "azurerm_kubernetes_cluster_node_pool" "monitoring" {
-  count                 = var.manage_monitoring ? 1 : 0
-  name                  = "monpool"
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
-  vm_size               = var.monitoring_node_vm_size
-  node_count            = var.monitoring_node_count
-  vnet_subnet_id        = azurerm_subnet.aks_subnet.id
-  os_sku                = "AzureLinux"
+resource "azurerm_kubernetes_cluster_node_pool" "infrastructure" {
+  count                 = (var.manage_argocd || var.manage_monitoring) ? 1 : 0
+  name                  = "infra"
+  kubernetes_cluster_id  = azurerm_kubernetes_cluster.aks.id
+  vm_size                = var.monitoring_node_vm_size
+  node_count             = 1
+  vnet_subnet_id         = azurerm_subnet.aks_subnet.id
+  os_sku                 = "AzureLinux"
 
   node_labels = {
-    "workload" = "monitoring"
+    "workload" = "infrastructure"
   }
 
-  node_taints = ["workload=monitoring:NoSchedule"]
+  node_taints = ["workload=infrastructure:NoSchedule"]
 
   tags = local.common_tags
 }

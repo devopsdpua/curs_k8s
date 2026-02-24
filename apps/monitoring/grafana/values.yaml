@@ -60,12 +60,12 @@ grafana:
         datasource: Mimir
 
   nodeSelector:
-    workload: monitoring
+    workload: infrastructure
 
   tolerations:
     - key: workload
       operator: Equal
-      value: monitoring
+      value: infrastructure
       effect: NoSchedule
 
   persistence:

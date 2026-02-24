@@ -42,11 +42,11 @@ mimir-distributed:
   distributor:
     replicas: 1
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
   ingester:
     replicas: 2
@@ -55,29 +55,29 @@ mimir-distributed:
     persistentVolume:
       size: 5Gi
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
   querier:
     replicas: 1
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
   query_frontend:
     replicas: 1
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
   store_gateway:
     replicas: 1
@@ -86,22 +86,22 @@ mimir-distributed:
     persistentVolume:
       size: 5Gi
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
   compactor:
     replicas: 1
     persistentVolume:
       size: 5Gi
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
   ruler:
     enabled: false
@@ -114,11 +114,11 @@ mimir-distributed:
   gateway:
     replicas: 1
     nodeSelector:
-      workload: monitoring
+      workload: infrastructure
     tolerations:
       - key: workload
         operator: Equal
-        value: monitoring
+        value: infrastructure
         effect: NoSchedule
 
   # Disable rollout-operator (not needed at this scale).
