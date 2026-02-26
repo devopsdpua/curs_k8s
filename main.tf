@@ -354,186 +354,184 @@ resource "azurerm_linux_virtual_machine" "jumpbox" {
   tags = local.common_tags
 }
 
-# # =============================================================================
-# # 11. Monitoring storage (Mimir, Loki)
-# # =============================================================================
+# =============================================================================
+# 11. Monitoring storage (Mimir, Loki)
+# =============================================================================
 
-# resource "azurerm_storage_account" "monitoring" {
-#   count                    = var.manage_monitoring ? 1 : 0
-#   name                     = var.mimir_storage_account_name
-#   resource_group_name      = azurerm_resource_group.aks_rg.name
-#   location                 = azurerm_resource_group.aks_rg.location
-#   account_tier             = "Standard"
-#   account_replication_type = "LRS"
-#   tags                     = local.common_tags
-# }
+resource "azurerm_storage_account" "monitoring" {
+  count                    = var.manage_monitoring ? 1 : 0
+  name                     = var.mimir_storage_account_name
+  resource_group_name      = azurerm_resource_group.aks_rg.name
+  location                 = azurerm_resource_group.aks_rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  tags                     = local.common_tags
+}
 
-# resource "azurerm_storage_container" "mimir" {
-#   count                 = var.manage_monitoring ? 1 : 0
-#   name                  = "mimir-data"
-#   storage_account_id    = azurerm_storage_account.monitoring[0].id
-#   container_access_type = "private"
-# }
+resource "azurerm_storage_container" "mimir" {
+  count                 = var.manage_monitoring ? 1 : 0
+  name                  = "mimir-data"
+  storage_account_id    = azurerm_storage_account.monitoring[0].id
+  container_access_type = "private"
+}
 
-# resource "azurerm_storage_container" "loki" {
-#   count                 = var.manage_monitoring ? 1 : 0
-#   name                  = "loki-data"
-#   storage_account_id    = azurerm_storage_account.monitoring[0].id
-#   container_access_type = "private"
-# }
+resource "azurerm_storage_container" "loki" {
+  count                 = var.manage_monitoring ? 1 : 0
+  name                  = "loki-data"
+  storage_account_id    = azurerm_storage_account.monitoring[0].id
+  container_access_type = "private"
+}
 
-# # =============================================================================
-# # 12. Monitoring identities (Mimir, Loki Workload Identity)
-# # =============================================================================
+# =============================================================================
+# 12. Monitoring identities (Mimir, Loki Workload Identity)
+# =============================================================================
 
-# resource "azurerm_user_assigned_identity" "mimir" {
-#   count               = var.manage_monitoring ? 1 : 0
-#   name                = "id-aks-mimir"
-#   location            = azurerm_resource_group.aks_rg.location
-#   resource_group_name = azurerm_resource_group.aks_rg.name
-# }
+resource "azurerm_user_assigned_identity" "mimir" {
+  count               = var.manage_monitoring ? 1 : 0
+  name                = "id-aks-mimir"
+  location            = azurerm_resource_group.aks_rg.location
+  resource_group_name = azurerm_resource_group.aks_rg.name
+}
 
-# resource "azurerm_federated_identity_credential" "mimir" {
-#   count     = var.manage_monitoring ? 1 : 0
-#   name      = "fed-aks-mimir"
-#   parent_id = azurerm_user_assigned_identity.mimir[0].id
-#   audience  = ["api://AzureADTokenExchange"]
-#   issuer    = azurerm_kubernetes_cluster.aks.oidc_issuer_url
-#   subject   = "system:serviceaccount:mimir:mimir"
-# }
+resource "azurerm_federated_identity_credential" "mimir" {
+  count     = var.manage_monitoring ? 1 : 0
+  name      = "fed-aks-mimir"
+  parent_id = azurerm_user_assigned_identity.mimir[0].id
+  audience  = ["api://AzureADTokenExchange"]
+  issuer    = azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  subject   = "system:serviceaccount:mimir:mimir"
+}
 
-# resource "azurerm_role_assignment" "mimir_blob_contributor" {
-#   count                = var.manage_monitoring ? 1 : 0
-#   scope                = azurerm_storage_account.monitoring[0].id
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = azurerm_user_assigned_identity.mimir[0].principal_id
-# }
+resource "azurerm_role_assignment" "mimir_blob_contributor" {
+  count                = var.manage_monitoring ? 1 : 0
+  scope                = azurerm_storage_account.monitoring[0].id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.mimir[0].principal_id
+}
 
-# resource "azurerm_user_assigned_identity" "loki" {
-#   count               = var.manage_monitoring ? 1 : 0
-#   name                = "id-aks-loki"
-#   location            = azurerm_resource_group.aks_rg.location
-#   resource_group_name = azurerm_resource_group.aks_rg.name
-# }
+resource "azurerm_user_assigned_identity" "loki" {
+  count               = var.manage_monitoring ? 1 : 0
+  name                = "id-aks-loki"
+  location            = azurerm_resource_group.aks_rg.location
+  resource_group_name = azurerm_resource_group.aks_rg.name
+}
 
-# resource "azurerm_federated_identity_credential" "loki" {
-#   count     = var.manage_monitoring ? 1 : 0
-#   name      = "fed-aks-loki"
-#   parent_id = azurerm_user_assigned_identity.loki[0].id
-#   audience  = ["api://AzureADTokenExchange"]
-#   issuer    = azurerm_kubernetes_cluster.aks.oidc_issuer_url
-#   subject   = "system:serviceaccount:monitoring:loki"
-# }
+resource "azurerm_federated_identity_credential" "loki" {
+  count     = var.manage_monitoring ? 1 : 0
+  name      = "fed-aks-loki"
+  parent_id = azurerm_user_assigned_identity.loki[0].id
+  audience  = ["api://AzureADTokenExchange"]
+  issuer    = azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  subject   = "system:serviceaccount:monitoring:loki"
+}
 
-# resource "azurerm_role_assignment" "loki_blob_contributor" {
-#   count                = var.manage_monitoring ? 1 : 0
-#   scope                = azurerm_storage_account.monitoring[0].id
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = azurerm_user_assigned_identity.loki[0].principal_id
-# }
+resource "azurerm_role_assignment" "loki_blob_contributor" {
+  count                = var.manage_monitoring ? 1 : 0
+  scope                = azurerm_storage_account.monitoring[0].id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.loki[0].principal_id
+}
 
-# # =============================================================================
-# # 13. Kubernetes namespace (monitoring) — for ReferenceGrant before ArgoCD sync
-# # =============================================================================
+# =============================================================================
+# 13. Kubernetes namespace (monitoring) — for ReferenceGrant before ArgoCD sync
+# =============================================================================
 
-# resource "kubernetes_namespace" "monitoring" {
-#   count = var.kube_config_path != "" && var.manage_monitoring ? 1 : 0
-#   metadata {
-#     name = "monitoring"
-#   }
-# }
+resource "kubernetes_namespace" "monitoring" {
+  count = var.kube_config_path != "" && var.manage_monitoring ? 1 : 0
+  metadata {
+    name = "monitoring"
+  }
+}
 
-# # =============================================================================
-# # 14. Helm releases (Envoy Gateway, ArgoCD)
-# # =============================================================================
+# =============================================================================
+# 14. Helm releases (Envoy Gateway, ArgoCD)
+# =============================================================================
 
-# resource "helm_release" "eg" {
-#   count            = var.kube_config_path != "" ? 1 : 0
-#   name             = "eg"
-#   repository       = "oci://docker.io/envoyproxy"
-#   chart            = "gateway-helm"
-#   version          = var.envoy_gateway_helm_version
-#   namespace        = "envoy-gateway-system"
-#   create_namespace = true
-# }
+resource "helm_release" "eg" {
+  count            = var.kube_config_path != "" ? 1 : 0
+  name             = "eg"
+  repository       = "oci://docker.io/envoyproxy"
+  chart            = "gateway-helm"
+  version          = var.envoy_gateway_helm_version
+  namespace        = "envoy-gateway-system"
+  create_namespace = true
+}
 
-# resource "helm_release" "argocd" {
-#   count            = var.kube_config_path != "" && var.manage_argocd ? 1 : 0
-#   name             = "argocd"
-#   repository       = "https://argoproj.github.io/argo-helm"
-#   chart            = "argo-cd"
-#   version          = var.argocd_helm_version
-#   namespace        = "argocd"
-#   create_namespace = true
+resource "helm_release" "argocd" {
+  count            = var.kube_config_path != "" && var.manage_argocd ? 1 : 0
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = var.argocd_helm_version
+  namespace        = "argocd"
+  create_namespace = true
 
-#   set {
-#     name  = "configs.params.server\\.insecure"
-#     value = "true"
-#   }
+  set {
+    name  = "configs.params.server\\.insecure"
+    value = "true"
+  }
 
-#   values = [
-#     yamlencode({
-#       global = {
-#         nodeSelector = {
-#           workload = "infrastructure"
-#         }
-#         tolerations = [
-#           {
-#             key      = "workload"
-#             operator = "Equal"
-#             value    = "infrastructure"
-#             effect   = "NoSchedule"
-#           }
-#         ]
-#       }
-#     })
-#   ]
-# }
+  values = [
+    yamlencode({
+      global = {
+        nodeSelector = {
+          workload = "infrastructure"
+        }
+        tolerations = [
+          {
+            key      = "workload"
+            operator = "Equal"
+            value    = "infrastructure"
+            effect   = "NoSchedule"
+          }
+        ]
+      }
+    })
+  ]
+}
 
-# # =============================================================================
-# # 15. Gateway API manifests
-# # =============================================================================
+# =============================================================================
+# 15. Gateway API manifests
+# =============================================================================
 
-# resource "kubernetes_manifest" "gateway_class" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
-#   manifest   = local.gateway_class_manifest
-#   depends_on = [helm_release.eg]
-# }
+resource "kubernetes_manifest" "gateway_class" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
+  manifest   = local.gateway_class_manifest
+  depends_on = [helm_release.eg]
+}
 
-# resource "kubernetes_manifest" "envoy_proxy_azure_pip" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
-#   manifest   = local.envoy_proxy_azure_pip_manifest
-#   depends_on = [helm_release.eg]
-# }
+resource "kubernetes_manifest" "envoy_proxy_azure_pip" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
+  manifest   = local.envoy_proxy_azure_pip_manifest
+  depends_on = [helm_release.eg]
+}
 
-# resource "kubernetes_manifest" "gateway" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
-#   manifest   = local.gateway_manifest
-#   depends_on = [helm_release.eg, kubernetes_manifest.envoy_proxy_azure_pip]
-# }
+resource "kubernetes_manifest" "gateway" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
+  manifest   = local.gateway_manifest
+  depends_on = [helm_release.eg, kubernetes_manifest.envoy_proxy_azure_pip]
+}
 
-# resource "kubernetes_manifest" "argocd_httproute" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
-#   manifest   = local.argocd_httproute_manifest
-#   depends_on = [helm_release.eg]
-# }
+resource "kubernetes_manifest" "argocd_httproute" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api ? 1 : 0
+  manifest   = local.argocd_httproute_manifest
+  depends_on = [helm_release.eg]
+}
 
-# resource "kubernetes_manifest" "argocd_reference_grant" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_argocd ? 1 : 0
-#   manifest   = local.argocd_reference_grant_manifest
-#   depends_on = [helm_release.argocd]
-# }
+resource "kubernetes_manifest" "argocd_reference_grant" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_argocd ? 1 : 0
+  manifest   = local.argocd_reference_grant_manifest
+  depends_on = [helm_release.argocd]
+}
 
-# resource "kubernetes_manifest" "grafana_httproute" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_monitoring ? 1 : 0
-#   manifest   = local.grafana_httproute_manifest
-#   depends_on = [helm_release.eg]
-# }
+resource "kubernetes_manifest" "grafana_httproute" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_monitoring ? 1 : 0
+  manifest   = local.grafana_httproute_manifest
+  depends_on = [helm_release.eg]
+}
 
-# resource "kubernetes_manifest" "grafana_reference_grant" {
-#   count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_monitoring ? 1 : 0
-#   manifest   = local.grafana_reference_grant_manifest
-#   depends_on = [helm_release.eg, kubernetes_namespace.monitoring]
-# }
-
-
+resource "kubernetes_manifest" "grafana_reference_grant" {
+  count      = var.kube_config_path != "" && var.manage_gateway_api && var.manage_monitoring ? 1 : 0
+  manifest   = local.grafana_reference_grant_manifest
+  depends_on = [helm_release.eg, kubernetes_namespace.monitoring]
+}
