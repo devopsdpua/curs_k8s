@@ -144,11 +144,15 @@ resource "azurerm_kubernetes_cluster_node_pool" "workload" {
   vm_size               = "Standard_B2s"
 
   auto_scaling_enabled = true
-  min_count            = 0
+  min_count            = 1
   max_count            = 3
 
   vnet_subnet_id = azurerm_subnet.aks_subnet.id
   os_sku         = "AzureLinux"
+
+  node_labels = {
+    workload = "infrastructure"
+  }
 
   tags = local.common_tags
 
