@@ -150,6 +150,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "workload" {
   vnet_subnet_id = azurerm_subnet.aks_subnet.id
   os_sku         = "AzureLinux"
 
+  temporary_name_for_rotation = "tempworkload"
+
   node_labels = {
     workload = "infrastructure"
   }
