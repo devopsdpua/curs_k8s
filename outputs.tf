@@ -32,13 +32,8 @@ output "jumpbox_private_ip" {
   sensitive = true
 }
 
-output "bastion_host_name" {
-  value     = local.create_bastion ? azurerm_bastion_host.main[0].name : null
-  sensitive = true
-}
-
 output "mimir_storage_account_name" {
-  value = var.manage_monitoring ? azurerm_storage_account.mimir[0].name : null
+  value = var.manage_monitoring ? azurerm_storage_account.monitoring[0].name : null
 }
 
 output "mimir_identity_client_id" {

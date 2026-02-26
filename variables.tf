@@ -13,6 +13,21 @@ variable "resource_group_location" {
   default = "West Europe"
 }
 
+variable "aks_cluster_name" {
+  type    = string
+  default = "aks-study-cluster"
+}
+
+variable "aks_dns_prefix" {
+  type    = string
+  default = "aksstudy"
+}
+
+variable "aks_sku_tier" {
+  type    = string
+  default = "Free"
+}
+
 variable "key_vault_resource_group_name" {
   type    = string
   default = "rg-learning-kv"
@@ -70,15 +85,7 @@ variable "jumpbox_ssh_source_prefix" {
   default = "0.0.0.0/0"
 }
 
-variable "create_bastion" {
-  type    = bool
-  default = false
-}
 
-variable "bastion_subnet_prefix" {
-  type    = string
-  default = "192.168.2.0/26"
-}
 
 variable "kube_config_path" {
   type    = string
