@@ -141,7 +141,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 resource "azurerm_kubernetes_cluster_node_pool" "workload" {
   name                  = "workload"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
-  vm_size               = "Standard_B2s"
+  vm_size               = "Standard_B2ps_v2"
 
   auto_scaling_enabled = true
   min_count            = 1
