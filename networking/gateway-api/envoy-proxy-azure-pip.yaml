@@ -15,4 +15,3 @@ spec:
         annotations:
           service.beta.kubernetes.io/azure-pip-name: pip-envoy-gateway
           service.beta.kubernetes.io/azure-load-balancer-resource-group: "${node_resource_group}"
-          service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"
