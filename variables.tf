@@ -112,32 +112,6 @@ variable "manage_argocd" {
   default = true
 }
 
-variable "manage_monitoring" {
-  type    = bool
-  default = false
-}
-
-variable "monitoring_node_vm_size" {
-  type    = string
-  default = "Standard_D4s_v3"
-}
-
-variable "monitoring_node_count" {
-  type    = number
-  default = 1
-}
-
-variable "mimir_storage_account_name" {
-  type        = string
-  description = "Globally unique name for the Azure Storage Account used by Mimir (3-24 lowercase letters/numbers). Required when manage_monitoring = true."
-  default     = ""
-
-  validation {
-    condition     = var.mimir_storage_account_name == "" || (length(var.mimir_storage_account_name) >= 3 && length(var.mimir_storage_account_name) <= 24 && can(regex("^[a-z0-9]+$", var.mimir_storage_account_name)))
-    error_message = "mimir_storage_account_name must be 3-24 lowercase letters/numbers."
-  }
-}
-
 variable "git_repo_url" {
   type        = string
   description = "Git repository URL for ArgoCD Applications (SSH or HTTPS)."

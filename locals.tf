@@ -29,59 +29,6 @@ locals {
       }
     })
   })
-  argocd_httproute_manifest        = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
-  argocd_reference_grant_manifest  = yamldecode(file("${path.module}/networking/routes/argocd-reference-grant.yaml"))
-  grafana_httproute_manifest       = yamldecode(file("${path.module}/networking/routes/grafana-httproute.yaml"))
-  grafana_reference_grant_manifest = yamldecode(file("${path.module}/networking/routes/grafana-reference-grant.yaml"))
-
-  # Monitoring helm overrides
-  loki_helm_overrides = var.manage_monitoring ? yamlencode({
-    loki = {
-      serviceAccount = {
-        annotations = {
-          "azure.workload.identity/client-id" = azurerm_user_assigned_identity.loki[0].client_id
-        }
-      }
-      podLabels = {
-        "azure.workload.identity/use" = "true"
-      }
-      loki = {
-        storage = {
-          azure = {
-            accountName       = azurerm_storage_account.monitoring[0].name
-            containerName     = "loki-data"
-            useFederatedToken = true
-          }
-        }
-      }
-    }
-  }) : ""
-
-  mimir_helm_overrides = var.manage_monitoring ? yamlencode({
-    "mimir-distributed" = {
-      serviceAccount = {
-        annotations = {
-          "azure.workload.identity/client-id" = azurerm_user_assigned_identity.mimir[0].client_id
-        }
-      }
-      global = {
-        podLabels = {
-          "azure.workload.identity/use" = "true"
-        }
-      }
-      mimir = {
-        structuredConfig = {
-          common = {
-            storage = {
-              backend = "azure"
-              azure = {
-                account_name   = azurerm_storage_account.monitoring[0].name
-                container_name = "mimir-data"
-              }
-            }
-          }
-        }
-      }
-    }
-  }) : ""
+  argocd_httproute_manifest       = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
+  argocd_reference_grant_manifest = yamldecode(file("${path.module}/networking/routes/argocd-reference-grant.yaml"))
 }
