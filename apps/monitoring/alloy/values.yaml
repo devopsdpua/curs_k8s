@@ -1,0 +1,169 @@
+alloy:
+  alloy:
+    # ---------------------------------------------------------------------------
+    # Alloy configuration (River format)
+    # ---------------------------------------------------------------------------
+    configMap:
+      create: true
+      content: |
+        // =====================================================================
+        // Kubernetes Discovery — find all pods/services/nodes
+        // =====================================================================
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
+        discovery.kubernetes "nodes" {
+          role = "node"
+        }
+
+        discovery.kubernetes "services" {
+          role = "service"
+        }
+
+        // =====================================================================
+        // Kubelet metrics (includes cAdvisor)
+        // =====================================================================
+        discovery.relabel "kubelet" {
+          targets = discovery.kubernetes.nodes.targets
+
+          rule {
+            source_labels = ["__address__"]
+            regex         = "(.+):(.+)"
+            target_label  = "__address__"
+            replacement   = "$1:10250"
+          }
+
+          rule {
+            target_label = "__scheme__"
+            replacement  = "https"
+          }
+        }
+
+        prometheus.scrape "kubelet" {
+          targets         = discovery.relabel.kubelet.output
+          scheme          = "https"
+          scrape_interval = "30s"
+          bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+          tls_config {
+            insecure_skip_verify = true
+          }
+
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // =====================================================================
+        // cAdvisor (container metrics)
+        // =====================================================================
+        discovery.relabel "cadvisor" {
+          targets = discovery.kubernetes.nodes.targets
+
+          rule {
+            source_labels = ["__address__"]
+            regex         = "(.+):(.+)"
+            target_label  = "__address__"
+            replacement   = "$1:10250"
+          }
+
+          rule {
+            target_label  = "__metrics_path__"
+            replacement   = "/metrics/cadvisor"
+          }
+
+          rule {
+            target_label = "__scheme__"
+            replacement  = "https"
+          }
+        }
+
+        prometheus.scrape "cadvisor" {
+          targets         = discovery.relabel.cadvisor.output
+          scheme          = "https"
+          scrape_interval = "30s"
+          bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+          tls_config {
+            insecure_skip_verify = true
+          }
+
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // =====================================================================
+        // Pod metrics (auto-discovery by annotations)
+        // =====================================================================
+        discovery.relabel "pod_metrics" {
+          targets = discovery.kubernetes.pods.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+            regex         = "true"
+            action        = "keep"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port"]
+            regex         = "(\\d+)"
+            target_label  = "__address__"
+            replacement   = "$1"
+            source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+            separator     = ":"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+            target_label  = "__metrics_path__"
+            regex         = "(.+)"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+        }
+
+        prometheus.scrape "pods" {
+          targets         = discovery.relabel.pod_metrics.output
+          scrape_interval = "30s"
+          forward_to      = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // =====================================================================
+        // Remote Write → Mimir
+        // =====================================================================
+        prometheus.remote_write "mimir" {
+          endpoint {
+            url = "http://mimir-distributed-gateway.monitoring.svc.cluster.local:80/api/v1/push"
+          }
+        }
+
+  # ---------------------------------------------------------------------------
+  # Controller type: DaemonSet (runs on every node)
+  # ---------------------------------------------------------------------------
+  controller:
+    type: daemonset
+
+  # Resources
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+  # RBAC for Kubernetes discovery
+  serviceAccount:
+    create: true
+
+  rbac:
+    create: true
+
+  # Tolerations to run on all nodes
+  tolerations:
+    - operator: Exists

@@ -29,6 +29,8 @@ locals {
       }
     })
   })
-  argocd_httproute_manifest       = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
-  argocd_reference_grant_manifest = yamldecode(file("${path.module}/networking/routes/argocd-reference-grant.yaml"))
+  argocd_httproute_manifest        = yamldecode(file("${path.module}/networking/routes/argocd-httproute.yaml"))
+  argocd_reference_grant_manifest  = yamldecode(file("${path.module}/networking/routes/argocd-reference-grant.yaml"))
+  grafana_httproute_manifest       = yamldecode(file("${path.module}/networking/routes/grafana-httproute.yaml"))
+  grafana_reference_grant_manifest = yamldecode(file("${path.module}/networking/routes/grafana-reference-grant.yaml"))
 }

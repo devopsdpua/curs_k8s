@@ -31,3 +31,11 @@ output "jumpbox_private_ip" {
   value     = local.create_jumpbox ? azurerm_network_interface.jumpbox[0].private_ip_address : null
   sensitive = true
 }
+
+output "mimir_storage_account_name" {
+  value = var.manage_monitoring ? azurerm_storage_account.monitoring[0].name : null
+}
+
+output "mimir_identity_client_id" {
+  value = var.manage_monitoring ? azurerm_user_assigned_identity.mimir[0].client_id : null
+}

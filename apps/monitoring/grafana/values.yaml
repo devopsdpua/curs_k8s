@@ -1,0 +1,76 @@
+grafana:
+  # ---------------------------------------------------------------------------
+  # Admin credentials
+  # ---------------------------------------------------------------------------
+  adminUser: admin
+  adminPassword: admin
+
+  # ---------------------------------------------------------------------------
+  # Datasources — Mimir as Prometheus-compatible backend
+  # ---------------------------------------------------------------------------
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Mimir
+          type: prometheus
+          url: http://mimir-distributed-gateway.monitoring.svc.cluster.local:80/prometheus
+          access: proxy
+          isDefault: true
+          jsonData:
+            httpMethod: POST
+
+  # ---------------------------------------------------------------------------
+  # Default dashboards for Kubernetes
+  # ---------------------------------------------------------------------------
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: Kubernetes
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+  dashboards:
+    default:
+      kubernetes-cluster:
+        gnetId: 7249
+        revision: 1
+        datasource: Mimir
+      kubernetes-pods:
+        gnetId: 6336
+        revision: 1
+        datasource: Mimir
+      node-exporter:
+        gnetId: 1860
+        revision: 37
+        datasource: Mimir
+
+  # ---------------------------------------------------------------------------
+  # Resources
+  # ---------------------------------------------------------------------------
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+  # ---------------------------------------------------------------------------
+  # Persistence
+  # ---------------------------------------------------------------------------
+  persistence:
+    enabled: true
+    size: 1Gi
+
+  # ---------------------------------------------------------------------------
+  # Service
+  # ---------------------------------------------------------------------------
+  service:
+    type: ClusterIP
+    port: 80

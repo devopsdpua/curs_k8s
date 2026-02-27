@@ -1,0 +1,10 @@
+apiVersion: v2
+name: mimir
+description: Grafana Mimir - horizontally scalable long-term metrics storage
+type: application
+version: 0.1.0
+
+dependencies:
+  - name: mimir-distributed
+    version: "5.6.0"
+    repository: https://grafana.github.io/helm-charts

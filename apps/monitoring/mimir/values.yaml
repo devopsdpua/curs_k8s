@@ -1,0 +1,93 @@
+mimir-distributed:
+  # ---------------------------------------------------------------------------
+  # Single-binary mode (lightweight for learning/dev clusters)
+  # ---------------------------------------------------------------------------
+  deploymentMode: SingleBinary
+
+  singleBinary:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+    extraArgs:
+      - "-auth.multitenancy-enabled=false"
+    # Workload Identity label
+    podLabels:
+      azure.workload.identity/use: "true"
+
+  # ---------------------------------------------------------------------------
+  # Azure Blob Storage backend
+  # ---------------------------------------------------------------------------
+  mimir:
+    structuredConfig:
+      common:
+        storage:
+          backend: azure
+          azure:
+            account_name: "${MIMIR_STORAGE_ACCOUNT}"
+            container_name: mimir-data
+      blocks_storage:
+        backend: azure
+        azure:
+          account_name: "${MIMIR_STORAGE_ACCOUNT}"
+          container_name: mimir-data
+      ruler_storage:
+        backend: azure
+        azure:
+          account_name: "${MIMIR_STORAGE_ACCOUNT}"
+          container_name: mimir-data
+
+  # ---------------------------------------------------------------------------
+  # Service Account with Workload Identity
+  # ---------------------------------------------------------------------------
+  serviceAccount:
+    create: true
+    annotations:
+      azure.workload.identity/client-id: "${MIMIR_CLIENT_ID}"
+
+  # ---------------------------------------------------------------------------
+  # Disable components not needed in single-binary mode
+  # ---------------------------------------------------------------------------
+  ingester:
+    replicas: 0
+  distributor:
+    replicas: 0
+  querier:
+    replicas: 0
+  query_frontend:
+    replicas: 0
+  store_gateway:
+    replicas: 0
+  compactor:
+    replicas: 0
+  ruler:
+    replicas: 0
+
+  # Gateway (nginx)
+  gateway:
+    enabledNonEnterprise: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+  # Disable optional components
+  minio:
+    enabled: false
+  rollout_operator:
+    enabled: false
+
+  # Meta-monitoring
+  metaMonitoring:
+    dashboards:
+      enabled: false
+    serviceMonitor:
+      enabled: false
+    grafanaAgent:
+      enabled: false
