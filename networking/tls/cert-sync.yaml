@@ -12,7 +12,7 @@ spec:
     metadata:
       labels:
         app: cert-sync
-        azure.workload.identity/client-id: "3be46062-ba6e-4f11-8766-ea78d1fab9b9"
+        azure.workload.identity/client-id: "12403c1e-5026-48ec-9ec6-53cdc3f16cdc"
     spec:
       containers:
         - name: cert-sync
