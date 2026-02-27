@@ -14,12 +14,9 @@ locals {
   common_tags               = { Environment = "Learning", ManagedBy = "Terraform" }
 
   # Gateway API manifests
-  gateway_class_manifest = yamldecode(file("${path.module}/networking/gateway-api/gateway-class.yaml"))
-  gateway_file           = yamldecode(file("${path.module}/networking/gateway-api/gateway.yaml"))
-  envoy_proxy_azure_pip_file = templatefile("${path.module}/networking/gateway-api/envoy-proxy-azure-pip.yaml", {
-    node_resource_group = azurerm_kubernetes_cluster.aks.node_resource_group
-  })
-  envoy_proxy_azure_pip_manifest = yamldecode(local.envoy_proxy_azure_pip_file)
+  gateway_class_manifest         = yamldecode(file("${path.module}/networking/gateway-api/gateway-class.yaml"))
+  gateway_file                   = yamldecode(file("${path.module}/networking/gateway-api/gateway.yaml"))
+  envoy_proxy_azure_pip_manifest = yamldecode(file("${path.module}/networking/gateway-api/envoy-proxy-azure-pip.yaml"))
   gateway_manifest = merge(local.gateway_file, {
     spec = merge(local.gateway_file.spec, {
       addresses = [{ type = "IPAddress", value = azurerm_public_ip.gateway.ip_address }]

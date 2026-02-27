@@ -1,7 +1,7 @@
 # EnvoyProxy config so the Envoy Service uses the existing static PIP (pip-envoy-gateway)
-# in the node resource group. Without this, AKS may assign a different frontend and the
-# static IP (gateway_public_ip) is not attached to the Load Balancer.
-# Node resource group is injected by Terraform when applying this via kubernetes_manifest.
+# created in rg-learning-aks (NOT the MC_ node resource group).
+# The azure-load-balancer-resource-group must match where the PIP actually lives.
+#
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -14,4 +14,4 @@ spec:
       envoyService:
         annotations:
           service.beta.kubernetes.io/azure-pip-name: pip-envoy-gateway
-          service.beta.kubernetes.io/azure-load-balancer-resource-group: "${node_resource_group}"
+          service.beta.kubernetes.io/azure-load-balancer-resource-group: "rg-learning-aks"
